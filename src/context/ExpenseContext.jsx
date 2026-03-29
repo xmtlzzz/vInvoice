@@ -161,6 +161,24 @@ export function ExpenseProvider({ children }) {
     }
   };
 
+  const deleteExpense = async (projectId, expenseId) => {
+    try {
+      const res = await fetch(`${API_BASE}/projects/${projectId}/expenses/${expenseId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete expense');
+      setData(prev => ({
+        ...prev,
+        projects: prev.projects.map(p =>
+          p.id === projectId
+            ? { ...p, expenses: p.expenses.filter(e => e.id !== expenseId) }
+            : p
+        )
+      }));
+    } catch (e) {
+      setError(e.message);
+      console.error('Failed to delete expense', e);
+    }
+  };
+
   const revokeProject = async (projectId) => {
     try {
       const res = await fetch(`${API_BASE}/projects/${projectId}/revoke`, { method: 'PUT' });
@@ -177,7 +195,7 @@ export function ExpenseProvider({ children }) {
   };
 
   return (
-    <ExpenseContext.Provider value={{ data, currentNamespace, setCurrentNamespace, loading, error, createNamespace, deleteNamespace, addProject, deleteProject, addExpense, toggleReimbursed, submitProject, revokeProject, refetch: fetchData }}>
+    <ExpenseContext.Provider value={{ data, currentNamespace, setCurrentNamespace, loading, error, createNamespace, deleteNamespace, addProject, deleteProject, addExpense, toggleReimbursed, submitProject, revokeProject, deleteExpense, refetch: fetchData }}>
       {children}
     </ExpenseContext.Provider>
   );

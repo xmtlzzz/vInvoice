@@ -107,7 +107,7 @@ export default function ProjectDetail() {
 
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-neutral-900">费用明细</h2>
-        {!project.submittedAtAt && (
+        {!project.submittedAt && (
           <button
             onClick={() => setIsExpenseModalOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors active:scale-95"
