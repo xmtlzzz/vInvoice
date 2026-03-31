@@ -10,20 +10,29 @@ export const EXPENSE_TYPES = {
 };
 
 const API_BASE = '/api';
-const NAMESPACE_KEY = 'vinvoice_namespace';
+const USER_KEY = 'vinvoice_user';
 
 export function ExpenseProvider({ children }) {
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem(USER_KEY);
+    return saved ? JSON.parse(saved) : null;
+  });
   const [data, setData] = useState({ namespaces: [], projects: [] });
-  const [currentNamespace, setCurrentNamespace] = useState(() => localStorage.getItem(NAMESPACE_KEY) || 'default');
+  const [currentNamespace, setCurrentNamespace] = useState('default');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}?namespace=${currentNamespace}`);
+      const headers = {};
+      if (user?.namespaceId) {
+        headers['x-user-namespace'] = user.namespaceId;
+      }
+      const res = await fetch(`${API_BASE}?namespace=${currentNamespace}`, { headers });
       if (!res.ok) throw new Error('Failed to fetch data');
       const json = await res.json();
       setData(json);
+      setCurrentNamespace(user?.namespaceId || 'default');
       setError(null);
     } catch (e) {
       setError(e.message);
@@ -31,54 +40,31 @@ export function ExpenseProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [currentNamespace]);
+  }, [currentNamespace, user]);
 
   useEffect(() => {
-    localStorage.setItem(NAMESPACE_KEY, currentNamespace);
     setLoading(true);
     fetchData();
-  }, [fetchData, currentNamespace]);
+  }, [fetchData]);
 
-  const createNamespace = async (name) => {
-    try {
-      const res = await fetch(`${API_BASE}/namespaces`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
-      });
-      if (!res.ok) throw new Error('Failed to create namespace');
-      const newNamespace = await res.json();
-      setData(prev => ({ ...prev, namespaces: [...prev.namespaces, newNamespace] }));
-      setCurrentNamespace(newNamespace.id);
-    } catch (e) {
-      setError(e.message);
-      console.error('Failed to create namespace', e);
-    }
+  const login = (userData) => {
+    setUser(userData);
+    localStorage.setItem(USER_KEY, JSON.stringify(userData));
   };
 
-  const deleteNamespace = async (id) => {
-    try {
-      const res = await fetch(`${API_BASE}/namespaces/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete namespace');
-      setData(prev => ({
-        ...prev,
-        namespaces: prev.namespaces.filter(n => n.id !== id),
-        projects: prev.projects.filter(p => p.namespaceId !== id)
-      }));
-      if (currentNamespace === id) {
-        setCurrentNamespace('default');
-      }
-    } catch (e) {
-      setError(e.message);
-      console.error('Failed to delete namespace', e);
-    }
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem(USER_KEY);
+    setCurrentNamespace('default');
   };
 
   const addProject = async (project) => {
     try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (user?.namespaceId) headers['x-user-namespace'] = user.namespaceId;
       const res = await fetch(`${API_BASE}/projects`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ ...project, namespaceId: currentNamespace }),
       });
       if (!res.ok) throw new Error('Failed to create project');
@@ -92,7 +78,9 @@ export function ExpenseProvider({ children }) {
 
   const deleteProject = async (projectId) => {
     try {
-      const res = await fetch(`${API_BASE}/projects/${projectId}`, { method: 'DELETE' });
+      const headers = {};
+      if (user?.namespaceId) headers['x-user-namespace'] = user.namespaceId;
+      const res = await fetch(`${API_BASE}/projects/${projectId}`, { method: 'DELETE', headers });
       if (!res.ok) throw new Error('Failed to delete project');
       setData(prev => ({
         ...prev,
@@ -106,9 +94,11 @@ export function ExpenseProvider({ children }) {
 
   const addExpense = async (projectId, expense) => {
     try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (user?.namespaceId) headers['x-user-namespace'] = user.namespaceId;
       const res = await fetch(`${API_BASE}/projects/${projectId}/expenses`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(expense),
       });
       if (!res.ok) throw new Error('Failed to add expense');
@@ -129,7 +119,9 @@ export function ExpenseProvider({ children }) {
 
   const toggleReimbursed = async (projectId, expenseId) => {
     try {
-      const res = await fetch(`${API_BASE}/projects/${projectId}/expenses/${expenseId}/toggle`, { method: 'PUT' });
+      const headers = {};
+      if (user?.namespaceId) headers['x-user-namespace'] = user.namespaceId;
+      const res = await fetch(`${API_BASE}/projects/${projectId}/expenses/${expenseId}/toggle`, { method: 'PUT', headers });
       if (!res.ok) throw new Error('Failed to toggle reimbursed');
       const updated = await res.json();
       setData(prev => ({
@@ -148,7 +140,9 @@ export function ExpenseProvider({ children }) {
 
   const submitProject = async (projectId) => {
     try {
-      const res = await fetch(`${API_BASE}/projects/${projectId}/submit`, { method: 'PUT' });
+      const headers = {};
+      if (user?.namespaceId) headers['x-user-namespace'] = user.namespaceId;
+      const res = await fetch(`${API_BASE}/projects/${projectId}/submit`, { method: 'PUT', headers });
       if (!res.ok) throw new Error('Failed to submit project');
       const updated = await res.json();
       setData(prev => ({
@@ -163,7 +157,9 @@ export function ExpenseProvider({ children }) {
 
   const deleteExpense = async (projectId, expenseId) => {
     try {
-      const res = await fetch(`${API_BASE}/projects/${projectId}/expenses/${expenseId}`, { method: 'DELETE' });
+      const headers = {};
+      if (user?.namespaceId) headers['x-user-namespace'] = user.namespaceId;
+      const res = await fetch(`${API_BASE}/projects/${projectId}/expenses/${expenseId}`, { method: 'DELETE', headers });
       if (!res.ok) throw new Error('Failed to delete expense');
       setData(prev => ({
         ...prev,
@@ -181,7 +177,9 @@ export function ExpenseProvider({ children }) {
 
   const revokeProject = async (projectId) => {
     try {
-      const res = await fetch(`${API_BASE}/projects/${projectId}/revoke`, { method: 'PUT' });
+      const headers = {};
+      if (user?.namespaceId) headers['x-user-namespace'] = user.namespaceId;
+      const res = await fetch(`${API_BASE}/projects/${projectId}/revoke`, { method: 'PUT', headers });
       if (!res.ok) throw new Error('Failed to revoke project');
       const updated = await res.json();
       setData(prev => ({
@@ -195,7 +193,7 @@ export function ExpenseProvider({ children }) {
   };
 
   return (
-    <ExpenseContext.Provider value={{ data, currentNamespace, setCurrentNamespace, loading, error, createNamespace, deleteNamespace, addProject, deleteProject, addExpense, toggleReimbursed, submitProject, revokeProject, deleteExpense, refetch: fetchData }}>
+    <ExpenseContext.Provider value={{ user, login, logout, data, currentNamespace, loading, error, addProject, deleteProject, addExpense, toggleReimbursed, submitProject, revokeProject, deleteExpense, refetch: fetchData }}>
       {children}
     </ExpenseContext.Provider>
   );

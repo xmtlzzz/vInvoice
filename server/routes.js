@@ -1,6 +1,72 @@
-import { loadData, saveData } from './db.js';
+import { loadData, saveData, loadUsers, saveUsers, loadInviteCodes, saveInviteCodes } from './db.js';
 
 export function applyRoutes(app) {
+  // POST /api/login - Login
+  app.post('/api/login', (req, res) => {
+    try {
+      const { username, password, inviteCode } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ error: '用户名和密码不能为空' });
+      }
+      if (!inviteCode) {
+        return res.status(400).json({ error: '邀请码不能为空' });
+      }
+      const codes = loadInviteCodes();
+      const validCode = codes.find(c => c.code === inviteCode && !c.used);
+      if (!validCode) {
+        return res.status(403).json({ error: '邀请码无效或已使用' });
+      }
+      const users = loadUsers();
+      const user = users.find(u => u.username === username && u.password === password);
+      if (!user) {
+        return res.status(401).json({ error: '用户名或密码错误' });
+      }
+      res.json({ id: user.id, username: user.username, namespaceId: user.namespaceId });
+    } catch (e) {
+      res.status(500).json({ error: '登录失败' });
+    }
+  });
+
+  // POST /api/register - Register
+  app.post('/api/register', (req, res) => {
+    try {
+      const { username, password, inviteCode } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ error: '用户名和密码不能为空' });
+      }
+      if (!inviteCode) {
+        return res.status(400).json({ error: '邀请码不能为空' });
+      }
+      const codes = loadInviteCodes();
+      const validCode = codes.find(c => c.code === inviteCode && !c.used);
+      if (!validCode) {
+        return res.status(403).json({ error: '邀请码无效或已使用' });
+      }
+      const users = loadUsers();
+      if (users.find(u => u.username === username)) {
+        return res.status(400).json({ error: '用户名已存在' });
+      }
+      const data = loadData();
+      const nsId = `ns_${username}_${Date.now()}`;
+      const user = {
+        id: Date.now().toString(),
+        username,
+        password,
+        namespaceId: nsId,
+      };
+      users.push(user);
+      saveUsers(users);
+      // Mark invite code as used
+      validCode.used = true;
+      saveInviteCodes(codes);
+      data.namespaces.push({ id: nsId, name: `${username} 的空间`, createdAt: new Date().toISOString() });
+      saveData(data);
+      res.status(201).json({ id: user.id, username: user.username, namespaceId: user.namespaceId });
+    } catch (e) {
+      res.status(500).json({ error: '注册失败' });
+    }
+  });
+
   // GET /api/namespaces - List all namespaces
   app.get('/api/namespaces', (req, res) => {
     try {
@@ -52,9 +118,12 @@ export function applyRoutes(app) {
   app.get('/api', (req, res) => {
     try {
       const data = loadData();
-      const namespaceId = req.query.namespace || 'default';
+      // If user is logged in, force their namespace
+      const userNamespace = req.headers['x-user-namespace'];
+      const namespaceId = userNamespace || req.query.namespace || 'default';
       const filteredProjects = data.projects.filter(p => p.namespaceId === namespaceId);
-      res.json({ namespaces: data.namespaces, projects: filteredProjects });
+      const namespaces = userNamespace ? data.namespaces.filter(n => n.id === userNamespace) : data.namespaces;
+      res.json({ namespaces, projects: filteredProjects });
     } catch (e) {
       res.status(500).json({ error: 'Failed to load data' });
     }
