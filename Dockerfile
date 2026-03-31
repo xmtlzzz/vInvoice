@@ -23,6 +23,11 @@ COPY --from=builder /app/dist ./dist
 # Create non-root user
 RUN addgroup -g 1001 -S appgroup && \
     adduser  -u 1001 -S appuser -G appgroup
+
+# Copy and setup entrypoint (needs root)
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 USER appuser
 
 EXPOSE 3001
@@ -30,4 +35,5 @@ EXPOSE 3001
 ENV NODE_ENV=production \
     PORT=3001
 
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["node", "server/server.js"]

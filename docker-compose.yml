@@ -6,6 +6,8 @@ services:
     restart: unless-stopped
     ports:
       - "3001:3001"
+    user: "1001:1001"
     volumes:
-      # Persist data.json outside the container
       - ./server/data.json:/app/server/data.json
+      - ./server/user.json:/app/server/user.json
+      - ./server/invite_codes.json:/app/server/invite_codes.json

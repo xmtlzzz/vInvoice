@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: vinvoice-api
+    env: node
+    region: oregon
+    buildCommand: npm install --omit=dev && npm install express cors
+    startCommand: node server/server.js
+    healthCheckPath: /api
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000

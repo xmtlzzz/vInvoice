@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { LogIn, UserPlus, Loader2, Gift } from 'lucide-react';
 import { useExpenses } from '../context/ExpenseContext';
 
+const API_BASE = import.meta.env.VITE_API_BASE || '/api';
+
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useExpenses();
@@ -22,7 +24,7 @@ export default function Login() {
     }
     setLoading(true);
     try {
-      const endpoint = isLogin ? '/api/login' : '/api/register';
+      const endpoint = isLogin ? `${API_BASE}/login` : `${API_BASE}/register`;
       const body = { username, password };
       if (!isLogin) body.inviteCode = inviteCode;
       const res = await fetch(endpoint, {
@@ -30,7 +32,13 @@ export default function Login() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data = null;
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        throw new Error('登录接口未返回 JSON，请检查部署中的 /api 路由转发配置');
+      }
       if (!res.ok) throw new Error(data.error || '操作失败');
       login(data);
       navigate('/');

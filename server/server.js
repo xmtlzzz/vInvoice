@@ -7,9 +7,12 @@ import { applyRoutes } from './routes.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
-const PORT = process.env.PORT || 3003;
+const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+app.use(cors({
+  origin: true,
+  credentials: true,
+}));
 app.use(express.json());
 
 // Serve static files from the parent dist folder

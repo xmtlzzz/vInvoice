@@ -9,7 +9,7 @@ export const EXPENSE_TYPES = {
   TRAIN: '高铁',
 };
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 const USER_KEY = 'vinvoice_user';
 
 export function ExpenseProvider({ children }) {
