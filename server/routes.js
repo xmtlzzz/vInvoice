@@ -4,17 +4,9 @@ export function applyRoutes(app) {
   // POST /api/login - Login
   app.post('/api/login', (req, res) => {
     try {
-      const { username, password, inviteCode } = req.body;
+      const { username, password } = req.body;
       if (!username || !password) {
         return res.status(400).json({ error: '用户名和密码不能为空' });
-      }
-      if (!inviteCode) {
-        return res.status(400).json({ error: '邀请码不能为空' });
-      }
-      const codes = loadInviteCodes();
-      const validCode = codes.find(c => c.code === inviteCode && !c.used);
-      if (!validCode) {
-        return res.status(403).json({ error: '邀请码无效或已使用' });
       }
       const users = loadUsers();
       const user = users.find(u => u.username === username && u.password === password);
