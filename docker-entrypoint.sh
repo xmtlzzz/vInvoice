@@ -24,7 +24,7 @@ check_and_fix_file "/app/data/invite_codes.json" '[{"code":"VIP2026","used":fals
 check_and_fix_file "/app/data/data.json" '{"namespaces":[{"id":"default","name":"默认空间","createdAt":"2026-03-31T00:00:00.000Z"}],"projects":[]}'
 
 echo "[EntryPoint] Fixing ownership to appuser (1001:1001)..."
-chown 1001:1001 /app/data/*.json 2>/dev/null || true
+chown -R 1001:1001 /app/data
 
-echo "[EntryPoint] Data files ready. Starting app..."
-exec "$@"
+echo "[EntryPoint] Switching to appuser and starting app..."
+exec gosu appuser "$@"

@@ -4,9 +4,7 @@ services:
     restart: unless-stopped
     ports:
       - "3001:3001"
-    user: "1001:1001"
     volumes:
-      # 数据持久化目录，可写且独立于 server.js
       - ./data:/app/data
     environment:
       - DATA_DIR=/app/data
