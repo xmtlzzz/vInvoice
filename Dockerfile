@@ -12,26 +12,29 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-RUN npm install -g gosu && \
-    addgroup -g 1001 -S appgroup && \
+RUN addgroup -g 1001 -S appgroup && \
     adduser -u 1001 -S appuser -G appgroup
 
-# Copy package files for root and server
-COPY --chown=appuser:appgroup package.json ./
-COPY --chown=appuser:appgroup server/package.json ./server/
-
-# Install dependencies (both root and server)
+# Copy and install dependencies first (for better layer caching)
+COPY package.json ./
+COPY server/package.json ./server/
 RUN npm install --omit=dev
 
 # Copy server source
-COPY --chown=appuser:appgroup server/ ./server/
+COPY server/ ./server/
 
 # Copy built frontend
-COPY --chown=appuser:appgroup --from=builder /app/dist ./dist/
+COPY --from=builder /app/dist ./dist/
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
+
+# Install gosu
+RUN npm install -g gosu
+
+# Fix ownership before switching to appuser
+RUN chown -R appuser:appgroup /app
 
 EXPOSE 3001
 
