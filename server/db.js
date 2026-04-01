@@ -1,11 +1,18 @@
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_FILE = join(__dirname, 'data.json');
-const USER_FILE = join(__dirname, 'user.json');
-const INVITE_FILE = join(__dirname, 'invite_codes.json');
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+
+// Ensure data directory exists
+if (!existsSync(DATA_DIR)) {
+  mkdirSync(DATA_DIR, { recursive: true });
+}
+
+const DATA_FILE = join(DATA_DIR, 'data.json');
+const USER_FILE = join(DATA_DIR, 'user.json');
+const INVITE_FILE = join(DATA_DIR, 'invite_codes.json');
 
 const initialData = {
   namespaces: [

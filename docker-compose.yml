@@ -1,12 +1,12 @@
-version: '3.8'
-
 services:
   app:
     build: .
     restart: unless-stopped
     ports:
       - "3001:3001"
-    volumes:
-      # 将宿主机目录映射到容器内，确保数据持久化且可写
-      - ./data:/app/server
     user: "1001:1001"
+    volumes:
+      # 数据持久化目录，可写且独立于 server.js
+      - ./data:/app/data
+    environment:
+      - DATA_DIR=/app/data
