@@ -6,8 +6,7 @@ services:
     restart: unless-stopped
     ports:
       - "3001:3001"
-    user: "1001:1001"
     volumes:
-      - ./server/data.json:/app/server/data.json
-      - ./server/user.json:/app/server/user.json
-      - ./server/invite_codes.json:/app/server/invite_codes.json
+      # 将宿主机目录映射到容器内，确保数据持久化且可写
+      - ./data:/app/server
+    user: "1001:1001"
