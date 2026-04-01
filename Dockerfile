@@ -13,9 +13,10 @@ FROM node:22-alpine
 WORKDIR /app
 
 RUN addgroup -g 1001 -S appgroup && \
-    adduser -u 1001 -S appuser -G appgroup
+    adduser -u 1001 -S appuser -G appgroup && \
+    apk add --no-cache gosu
 
-# Copy and install dependencies first (for better layer caching)
+# Copy and install dependencies first
 COPY package.json ./
 COPY server/package.json ./server/
 RUN npm install --omit=dev
@@ -29,12 +30,6 @@ COPY --from=builder /app/dist ./dist/
 # Copy entrypoint script
 COPY docker-entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
-
-# Install gosu
-RUN npm install -g gosu
-
-# Fix ownership before switching to appuser
-RUN chown -R appuser:appgroup /app
 
 EXPOSE 3001
 
