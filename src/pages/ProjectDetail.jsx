@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Check, X as XIcon, Train, Car, Building2, Footprints, Loader2, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Plus, Check, X as XIcon, Train, Car, Building2, Footprints, Loader2, RotateCcw, Bus } from 'lucide-react';
 import { useExpenses, EXPENSE_TYPES } from '../context/ExpenseContext';
 import ExpenseModal from '../components/ExpenseModal';
 import clsx from 'clsx';
@@ -10,6 +10,9 @@ export default function ProjectDetail() {
   const navigate = useNavigate();
   const { data, loading, toggleReimbursed, submitProject, revokeProject, deleteExpense } = useExpenses();
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [filterType, setFilterType] = useState('ALL');
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
 
   if (loading) {
     return (
@@ -30,17 +33,26 @@ export default function ProjectDetail() {
     );
   }
 
-  const totalAmount = project.expenses.reduce((a, e) => a + e.amount, 0);
-  const reimbursedAmount = project.expenses.filter(e => e.reimbursed).reduce((a, e) => a + e.amount, 0);
-
   const typeIcons = {
     SUBWAY: Train,
     TAXI: Car,
     HOTEL: Building2,
     TRAIN: Footprints,
+    BUS: Bus,
   };
 
   const sortedExpenses = [...project.expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const filteredExpenses = sortedExpenses.filter((expense) => {
+    const expenseDate = new Date(expense.date);
+    const inType = filterType === 'ALL' || expense.type === filterType;
+    const afterStart = !filterStartDate || expenseDate >= new Date(filterStartDate);
+    const beforeEnd = !filterEndDate || expenseDate <= new Date(filterEndDate);
+    return inType && afterStart && beforeEnd;
+  });
+
+  const totalAmount = filteredExpenses.reduce((a, e) => a + e.amount, 0);
+  const reimbursedAmount = filteredExpenses.filter(e => e.reimbursed).reduce((a, e) => a + e.amount, 0);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -118,8 +130,44 @@ export default function ProjectDetail() {
         )}
       </div>
 
+      <div className="bg-white rounded-2xl p-4 shadow-sm border border-neutral-100 space-y-3">
+        <div className="flex flex-wrap gap-3">
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:border-primary-500 outline-none"
+          >
+            <option value="ALL">全部类型</option>
+            {Object.entries(EXPENSE_TYPES).map(([key, label]) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+          <input
+            type="date"
+            value={filterStartDate}
+            onChange={(e) => setFilterStartDate(e.target.value)}
+            className="px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:border-primary-500 outline-none"
+          />
+          <span className="text-neutral-400 self-center text-sm">至</span>
+          <input
+            type="date"
+            value={filterEndDate}
+            onChange={(e) => setFilterEndDate(e.target.value)}
+            className="px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:border-primary-500 outline-none"
+          />
+          {(filterType !== 'ALL' || filterStartDate || filterEndDate) && (
+            <button
+              onClick={() => { setFilterType('ALL'); setFilterStartDate(''); setFilterEndDate(''); }}
+              className="px-3 py-2 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+            >
+              清除筛选
+            </button>
+          )}
+        </div>
+      </div>
+
       <div className="space-y-3">
-        {project.expenses.length === 0 ? (
+        {filteredExpenses.length === 0 ? (
           <div className="bg-white rounded-2xl p-8 text-center border border-neutral-100">
             <p className="text-neutral-500 text-sm">暂无费用记录</p>
             {!project.submittedAt && (
@@ -132,7 +180,7 @@ export default function ProjectDetail() {
             )}
           </div>
         ) : (
-          sortedExpenses.map((expense) => {
+          filteredExpenses.map((expense) => {
             const Icon = typeIcons[expense.type] || Train;
             return (
               <div

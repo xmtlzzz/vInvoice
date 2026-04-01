@@ -7,6 +7,7 @@ export const EXPENSE_TYPES = {
   TAXI: '打车',
   HOTEL: '住宿',
   TRAIN: '高铁',
+  BUS: '大巴车',
 };
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api';
