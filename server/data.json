@@ -23,54 +23,6 @@
   ],
   "projects": [
     {
-      "id": "1774857952653",
-      "namespaceId": "default",
-      "name": "友联船厂",
-      "description": "2个月运维",
-      "createdAt": "2026-03-30",
-      "submittedAt": null,
-      "expenses": [
-        {
-          "id": "1774857961943",
-          "type": "HOTEL",
-          "amount": 3600,
-          "date": "2026-03-30",
-          "description": "",
-          "reimbursed": false,
-          "pdf": null
-        },
-        {
-          "id": "1774857965584",
-          "type": "TRAIN",
-          "amount": 200,
-          "date": "2026-03-30",
-          "description": "",
-          "reimbursed": false,
-          "pdf": null
-        }
-      ]
-    },
-    {
-      "id": "1775019474611",
-      "namespaceId": "ns_sz",
-      "name": "123123",
-      "description": "123",
-      "createdAt": "2026-04-01",
-      "submittedAt": null,
-      "expenses": [
-        {
-          "id": "1775019488539",
-          "type": "BUS",
-          "amount": 123,
-          "date": "2026-04-01",
-          "description": "123",
-          "reimbursed": false,
-          "pdf": null
-        }
-      ]
-    },
-    {
-      "id": "proj_sz_001",
       "namespaceId": "ns_sz",
       "name": "友联船厂",
       "description": "",

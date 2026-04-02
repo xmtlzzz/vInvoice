@@ -5,6 +5,6 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./data:/app/data
+      - ./server:/app/server
     environment:
-      - DATA_DIR=/app/data
+      - DATA_DIR=/app/server
