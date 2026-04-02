@@ -24,6 +24,11 @@
       "id": "ns_sz",
       "name": "sz 的空间",
       "createdAt": "2026-03-31T05:28:47.226Z"
+    },
+    {
+      "id": "ns_sz_new",
+      "name": "sz 的空间",
+      "createdAt": "2026-04-01T03:51:14.711Z"
     }
   ],
   "projects": [
@@ -69,6 +74,88 @@
           "amount": 123,
           "date": "2026-04-01",
           "description": "123",
+          "reimbursed": false,
+          "pdf": null
+        }
+      ]
+    },
+    {
+      "id": "proj_sz_001",
+      "namespaceId": "ns_sz_new",
+      "name": "友联船厂",
+      "description": "",
+      "createdAt": "2026-04-01",
+      "submittedAt": null,
+      "expenses": [
+        {
+          "id": "exp_hotel_001",
+          "type": "HOTEL",
+          "amount": 3600,
+          "date": "2026-04-01",
+          "description": "3月23-4月23 1个月华嵘酒店",
+          "reimbursed": false,
+          "pdf": null
+        },
+        {
+          "id": "exp_train_001",
+          "type": "TRAIN",
+          "amount": 85,
+          "date": "2026-04-01",
+          "description": "2026年03月30日",
+          "reimbursed": false,
+          "pdf": null
+        },
+        {
+          "id": "exp_train_002",
+          "type": "TRAIN",
+          "amount": 66,
+          "date": "2026-04-01",
+          "description": "2026年03月27日",
+          "reimbursed": false,
+          "pdf": null
+        },
+        {
+          "id": "exp_train_003",
+          "type": "TRAIN",
+          "amount": 66,
+          "date": "2026-04-01",
+          "description": "2026年03月23日",
+          "reimbursed": false,
+          "pdf": null
+        },
+        {
+          "id": "exp_bus_001",
+          "type": "BUS",
+          "amount": 73,
+          "date": "2026-04-01",
+          "description": "2026-03-27 大巴",
+          "reimbursed": false,
+          "pdf": null
+        },
+        {
+          "id": "exp_bus_002",
+          "type": "BUS",
+          "amount": 77,
+          "date": "2026-04-01",
+          "description": "2026-03-30 大巴",
+          "reimbursed": false,
+          "pdf": null
+        },
+        {
+          "id": "exp_bus_003",
+          "type": "BUS",
+          "amount": 108,
+          "date": "2026-04-01",
+          "description": "2026-03-23 大巴",
+          "reimbursed": false,
+          "pdf": null
+        },
+        {
+          "id": "exp_taxi_001",
+          "type": "TAXI",
+          "amount": 171,
+          "date": "2026-04-01",
+          "description": "累加打车-统计时间2026-4-1",
           "reimbursed": false,
           "pdf": null
         }

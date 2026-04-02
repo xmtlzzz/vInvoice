@@ -16,24 +16,30 @@ const USER_KEY = 'vinvoice_user';
 export function ExpenseProvider({ children }) {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem(USER_KEY);
-    return saved ? JSON.parse(saved) : null;
+    const savedUser = saved ? JSON.parse(saved) : null;
+    return savedUser;
   });
   const [data, setData] = useState({ namespaces: [], projects: [] });
-  const [currentNamespace, setCurrentNamespace] = useState('default');
+  const [currentNamespace, setCurrentNamespace] = useState(() => {
+    const saved = localStorage.getItem(USER_KEY);
+    const savedUser = saved ? JSON.parse(saved) : null;
+    return savedUser?.namespaceId || 'default';
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const fetchData = useCallback(async () => {
     try {
       const headers = {};
+      const ns = user?.namespaceId || 'default';
       if (user?.namespaceId) {
         headers['x-user-namespace'] = user.namespaceId;
       }
-      const res = await fetch(`${API_BASE}?namespace=${currentNamespace}`, { headers });
+      const res = await fetch(`${API_BASE}?namespace=${ns}`, { headers });
       if (!res.ok) throw new Error('Failed to fetch data');
       const json = await res.json();
       setData(json);
-      setCurrentNamespace(user?.namespaceId || 'default');
+      setCurrentNamespace(ns);
       setError(null);
     } catch (e) {
       setError(e.message);
@@ -41,7 +47,7 @@ export function ExpenseProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [currentNamespace, user]);
+  }, [user]);
 
   useEffect(() => {
     setLoading(true);
@@ -50,6 +56,7 @@ export function ExpenseProvider({ children }) {
 
   const login = (userData) => {
     setUser(userData);
+    setCurrentNamespace(userData.namespaceId || 'default');
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
   };
 
