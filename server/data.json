@@ -23,6 +23,7 @@
   ],
   "projects": [
     {
+      "id": "proj_sz_001",
       "namespaceId": "ns_sz",
       "name": "友联船厂",
       "description": "",
