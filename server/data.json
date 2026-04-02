@@ -6,11 +6,6 @@
       "createdAt": "2026-03-29T14:43:45.099Z"
     },
     {
-      "id": "1774795492918",
-      "name": "sz",
-      "createdAt": "2026-03-29T14:44:52.918Z"
-    },
-    {
       "id": "1774795598992",
       "name": "cxy",
       "createdAt": "2026-03-29T14:46:38.992Z"
@@ -24,11 +19,6 @@
       "id": "ns_sz",
       "name": "sz 的空间",
       "createdAt": "2026-03-31T05:28:47.226Z"
-    },
-    {
-      "id": "ns_sz_new",
-      "name": "sz 的空间",
-      "createdAt": "2026-04-01T03:51:14.711Z"
     }
   ],
   "projects": [
@@ -81,7 +71,7 @@
     },
     {
       "id": "proj_sz_001",
-      "namespaceId": "ns_sz_new",
+      "namespaceId": "ns_sz",
       "name": "友联船厂",
       "description": "",
       "createdAt": "2026-04-01",
