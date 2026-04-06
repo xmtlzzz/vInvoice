@@ -35,7 +35,7 @@ EXPOSE 3001
 
 ENV NODE_ENV=production \
     PORT=3001 \
-    DATA_DIR=/app/data
+    DATA_DIR=/app/server
 
 ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh"]
 CMD ["node", "server/server.js"]

@@ -2,7 +2,7 @@
 set -e
 
 echo "[EntryPoint] Ensuring data directory exists..."
-mkdir -p /app/data
+mkdir -p /app/server
 
 echo "[EntryPoint] Checking and fixing data files..."
 
@@ -19,12 +19,12 @@ check_and_fix_file() {
     fi
 }
 
-check_and_fix_file "/app/data/user.json" "[]"
-check_and_fix_file "/app/data/invite_codes.json" '[{"code":"VIP2026","used":false,"createdAt":"2026-03-31T00:00:00.000Z"}]'
-check_and_fix_file "/app/data/data.json" '{"namespaces":[{"id":"default","name":"默认空间","createdAt":"2026-03-31T00:00:00.000Z"}],"projects":[]}'
+check_and_fix_file "/app/server/user.json" "[]"
+check_and_fix_file "/app/server/invite_codes.json" '[{"code":"VIP2026","used":false,"createdAt":"2026-03-31T00:00:00.000Z"}]'
+check_and_fix_file "/app/server/data.json" '{"namespaces":[{"id":"default","name":"默认空间","createdAt":"2026-03-31T00:00:00.000Z"}],"projects":[]}'
 
 echo "[EntryPoint] Fixing ownership to appuser (1001:1001)..."
-chown -R 1001:1001 /app/data
+chown -R 1001:1001 /app/server
 
 echo "[EntryPoint] Switching to appuser and starting app..."
 exec gosu appuser "$@"

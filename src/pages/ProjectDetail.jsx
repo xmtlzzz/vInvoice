@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Check, X as XIcon, Train, Car, Building2, Footprints, Loader2, RotateCcw, Bus } from 'lucide-react';
+import { ArrowLeft, Plus, Check, X as XIcon, Train, Car, Building2, Footprints, Loader2, RotateCcw, Bus, Pencil } from 'lucide-react';
 import { useExpenses, EXPENSE_TYPES } from '../context/ExpenseContext';
 import ExpenseModal from '../components/ExpenseModal';
 import clsx from 'clsx';
@@ -8,8 +8,9 @@ import clsx from 'clsx';
 export default function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data, loading, toggleReimbursed, submitProject, revokeProject, deleteExpense } = useExpenses();
+  const { data, loading, toggleReimbursed, submitProject, revokeProject, deleteExpense, updateExpense } = useExpenses();
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
   const [filterType, setFilterType] = useState('ALL');
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
@@ -211,6 +212,16 @@ export default function ProjectDetail() {
                 {!project.submittedAt && (
                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
+                      onClick={() => {
+                        setEditingExpense(expense);
+                        setIsExpenseModalOpen(true);
+                      }}
+                      className="w-8 h-8 rounded-full flex items-center justify-center bg-neutral-100 text-neutral-500 hover:bg-primary-100 hover:text-primary-600 transition-colors"
+                      title="编辑"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
                       onClick={() => toggleReimbursed(project.id, expense.id)}
                       className={clsx(
                         'w-8 h-8 rounded-full flex items-center justify-center transition-colors',
@@ -239,8 +250,13 @@ export default function ProjectDetail() {
 
       <ExpenseModal
         isOpen={isExpenseModalOpen}
-        onClose={() => setIsExpenseModalOpen(false)}
+        onClose={() => {
+          setIsExpenseModalOpen(false);
+          setEditingExpense(null);
+        }}
         projectId={project.id}
+        expense={editingExpense}
+        onUpdate={updateExpense}
       />
     </div>
   );

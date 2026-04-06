@@ -1,20 +1,31 @@
 import React, { useState } from 'react';
 import { useExpenses } from '../context/ExpenseContext';
+import { Loader2 } from 'lucide-react';
 
 export default function ProjectModal({ isOpen, onClose }) {
   const { addProject } = useExpenses();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) return;
-    addProject({ name, description });
-    setName('');
-    setDescription('');
-    onClose();
+    setLoading(true);
+    setError('');
+    try {
+      await addProject({ name, description });
+      setName('');
+      setDescription('');
+      onClose();
+    } catch (err) {
+      setError(err.message || '创建项目失败，请重试');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,19 +58,27 @@ export default function ProjectModal({ isOpen, onClose }) {
               className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all bg-neutral-50 min-h-[100px] resize-none"
             />
           </div>
+          {error && (
+            <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl">
+              {error}
+            </div>
+          )}
           <div className="flex items-center gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 bg-neutral-100 text-neutral-700 font-medium rounded-xl hover:bg-neutral-200 transition-colors"
+              disabled={loading}
+              className="flex-1 px-4 py-2.5 bg-neutral-100 text-neutral-700 font-medium rounded-xl hover:bg-neutral-200 transition-colors disabled:opacity-50"
             >
               取消
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2.5 bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 transition-colors active:scale-95"
+              disabled={loading}
+              className="flex-1 px-4 py-2.5 bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              创建项目
+              {loading ? <Loader2 size={16} className="animate-spin" /> : null}
+              {loading ? '创建中...' : '创建项目'}
             </button>
           </div>
         </form>

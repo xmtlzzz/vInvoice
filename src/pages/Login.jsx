@@ -27,19 +27,29 @@ export default function Login() {
       const endpoint = isLogin ? `${API_BASE}/login` : `${API_BASE}/register`;
       const body = { username, password };
       if (!isLogin) body.inviteCode = inviteCode;
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const text = await res.text();
+      let res;
+      try {
+        res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+      } catch (e) {
+        throw new Error('无法连接到服务器，请检查网络或服务器状态');
+      }
       let data = null;
       try {
+        const text = await res.text();
         data = text ? JSON.parse(text) : {};
       } catch {
-        throw new Error('登录接口未返回 JSON，请检查部署中的 /api 路由转发配置');
+        if (!res.ok) {
+          throw new Error(`服务器返回了空白或无效响应（HTTP ${res.status}），可能是后端服务异常`);
+        }
+        throw new Error('服务器响应格式错误');
       }
-      if (!res.ok) throw new Error(data.error || '操作失败');
+      if (!res.ok) {
+        throw new Error(data?.error || `请求失败（HTTP ${res.status}）`);
+      }
       login(data);
       navigate('/');
     } catch (err) {

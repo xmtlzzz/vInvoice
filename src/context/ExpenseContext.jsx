@@ -81,6 +81,7 @@ export function ExpenseProvider({ children }) {
     } catch (e) {
       setError(e.message);
       console.error('Failed to create project', e);
+      throw e;  // Re-throw so callers can catch it
     }
   };
 
@@ -163,6 +164,32 @@ export function ExpenseProvider({ children }) {
     }
   };
 
+  const updateExpense = async (projectId, expenseId, updates) => {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (user?.namespaceId) headers['x-user-namespace'] = user.namespaceId;
+      const res = await fetch(`${API_BASE}/projects/${projectId}/expenses/${expenseId}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error('Failed to update expense');
+      const updated = await res.json();
+      setData(prev => ({
+        ...prev,
+        projects: prev.projects.map(p =>
+          p.id === projectId
+            ? { ...p, expenses: p.expenses.map(e => e.id === expenseId ? updated : e) }
+            : p
+        )
+      }));
+    } catch (e) {
+      setError(e.message);
+      console.error('Failed to update expense', e);
+      throw e;
+    }
+  };
+
   const deleteExpense = async (projectId, expenseId) => {
     try {
       const headers = {};
@@ -201,7 +228,7 @@ export function ExpenseProvider({ children }) {
   };
 
   return (
-    <ExpenseContext.Provider value={{ user, login, logout, data, currentNamespace, loading, error, addProject, deleteProject, addExpense, toggleReimbursed, submitProject, revokeProject, deleteExpense, refetch: fetchData }}>
+    <ExpenseContext.Provider value={{ user, login, logout, data, currentNamespace, loading, error, addProject, deleteProject, addExpense, updateExpense, toggleReimbursed, submitProject, revokeProject, deleteExpense, refetch: fetchData }}>
       {children}
     </ExpenseContext.Provider>
   );

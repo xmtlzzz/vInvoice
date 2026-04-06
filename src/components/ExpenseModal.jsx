@@ -1,31 +1,53 @@
 import React, { useState } from 'react';
 import { useExpenses, EXPENSE_TYPES } from '../context/ExpenseContext';
 import clsx from 'clsx';
+import { Loader2 } from 'lucide-react';
 
-export default function ExpenseModal({ isOpen, onClose, projectId }) {
+export default function ExpenseModal({ isOpen, onClose, projectId, expense, onUpdate }) {
   const { addExpense } = useExpenses();
-  const [type, setType] = useState('SUBWAY');
-  const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [description, setDescription] = useState('');
+  const isEditMode = !!expense;
+  const [type, setType] = useState(expense?.type || 'SUBWAY');
+  const [amount, setAmount] = useState(expense?.amount?.toString() || '');
+  const [date, setDate] = useState(expense?.date || new Date().toISOString().split('T')[0]);
+  const [description, setDescription] = useState(expense?.description || '');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!amount || parseFloat(amount) <= 0) return;
 
-    addExpense(projectId, {
-      type,
-      amount: parseFloat(amount),
-      date,
-      description,
-      reimbursed: false,
-    });
+    setLoading(true);
+    setError('');
 
-    setAmount('');
-    setDescription('');
-    onClose();
+    try {
+      if (isEditMode) {
+        await onUpdate(projectId, expense.id, {
+          type,
+          amount: parseFloat(amount),
+          date,
+          description,
+        });
+      } else {
+        await addExpense(projectId, {
+          type,
+          amount: parseFloat(amount),
+          date,
+          description,
+          reimbursed: false,
+        });
+      }
+
+      setAmount('');
+      setDescription('');
+      onClose();
+    } catch (err) {
+      setError(err.message || (isEditMode ? '更新费用失败，请重试' : '添加费用失败，请重试'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -96,15 +118,18 @@ export default function ExpenseModal({ isOpen, onClose, projectId }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 bg-neutral-100 text-neutral-700 font-medium rounded-xl hover:bg-neutral-200 transition-colors"
+              disabled={loading}
+              className="flex-1 px-4 py-2.5 bg-neutral-100 text-neutral-700 font-medium rounded-xl hover:bg-neutral-200 transition-colors disabled:opacity-50"
             >
               取消
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2.5 bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 transition-colors active:scale-95"
+              disabled={loading}
+              className="flex-1 px-4 py-2.5 bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              添加
+              {loading ? <Loader2 size={16} className="animate-spin" /> : null}
+              {loading ? (isEditMode ? '更新中...' : '添加中...') : (isEditMode ? '更新费用' : '添加')}
             </button>
           </div>
         </form>

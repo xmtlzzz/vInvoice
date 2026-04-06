@@ -1,20 +1,37 @@
 import { loadData, saveData, loadUsers, saveUsers, loadInviteCodes, saveInviteCodes } from './db.js';
 
+const LOG_ENDPOINT = 'http://127.0.0.1:7472/ingest/0a9d034e-1e76-432e-94d3-4c7f241917a3';
+const SESSION_ID = '737a65';
+
+function debugLog(hypothesisId, location, message, data = {}) {
+  fetch(LOG_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': SESSION_ID },
+    body: JSON.stringify({ sessionId: SESSION_ID, hypothesisId, location, message, data, timestamp: Date.now() })
+  }).catch(() => {});
+}
+
 export function applyRoutes(app) {
   // POST /api/login - Login
   app.post('/api/login', (req, res) => {
     try {
       const { username, password } = req.body;
+      debugLog('A', 'routes.js:login_entry', 'login request', { username, hasPassword: !!password });
       if (!username || !password) {
+        debugLog('A', 'routes.js:login_validation', 'validation failed: empty fields');
         return res.status(400).json({ error: '用户名和密码不能为空' });
       }
       const users = loadUsers();
+      debugLog('B', 'routes.js:login_loadUsers', 'loadUsers result', { count: users.length });
       const user = users.find(u => u.username === username && u.password === password);
       if (!user) {
+        debugLog('A', 'routes.js:login_userNotFound', 'user not found or wrong password');
         return res.status(401).json({ error: '用户名或密码错误' });
       }
+      debugLog('A', 'routes.js:login_success', 'login success', { userId: user.id });
       res.json({ id: user.id, username: user.username, namespaceId: user.namespaceId });
     } catch (e) {
+      debugLog('A', 'routes.js:login_error', 'login exception', { error: e.message, stack: e.stack });
       res.status(500).json({ error: '登录失败' });
     }
   });
@@ -23,6 +40,7 @@ export function applyRoutes(app) {
   app.post('/api/register', (req, res) => {
     try {
       const { username, password, inviteCode } = req.body;
+      debugLog('C', 'routes.js:register_entry', 'register request', { username, hasPassword: !!password, hasInviteCode: !!inviteCode });
       if (!username || !password) {
         return res.status(400).json({ error: '用户名和密码不能为空' });
       }
@@ -30,15 +48,19 @@ export function applyRoutes(app) {
         return res.status(400).json({ error: '邀请码不能为空' });
       }
       const codes = loadInviteCodes();
+      debugLog('D', 'routes.js:register_loadCodes', 'loadInviteCodes result', { count: codes.length, inviteCode });
       const validCode = codes.find(c => c.code === inviteCode && !c.used);
       if (!validCode) {
+        debugLog('D', 'routes.js:register_badCode', 'invalid or used invite code');
         return res.status(403).json({ error: '邀请码无效或已使用' });
       }
       const users = loadUsers();
+      debugLog('E', 'routes.js:register_loadUsers', 'loadUsers result', { count: users.length });
       if (users.find(u => u.username === username)) {
-        return res.status(400).json({ error: '用户名已存在' });
+        return res.status(400).json({ error: '用���名已存在' });
       }
       const data = loadData();
+      debugLog('C', 'routes.js:register_loadData', 'loadData result', { namespaces: data.namespaces.length, projects: data.projects.length });
       const nsId = `ns_${username}_${Date.now()}`;
       const user = {
         id: Date.now().toString(),
@@ -48,13 +70,17 @@ export function applyRoutes(app) {
       };
       users.push(user);
       saveUsers(users);
+      debugLog('E', 'routes.js:register_saveUsers', 'saveUsers called');
       // Mark invite code as used
       validCode.used = true;
       saveInviteCodes(codes);
+      debugLog('D', 'routes.js:register_saveCodes', 'saveInviteCodes called');
       data.namespaces.push({ id: nsId, name: `${username} 的空间`, createdAt: new Date().toISOString() });
       saveData(data);
+      debugLog('C', 'routes.js:register_saveData', 'saveData called');
       res.status(201).json({ id: user.id, username: user.username, namespaceId: user.namespaceId });
     } catch (e) {
+      debugLog('C', 'routes.js:register_error', 'register exception', { error: e.message, stack: e.stack });
       res.status(500).json({ error: '注册失败' });
     }
   });
@@ -125,12 +151,15 @@ export function applyRoutes(app) {
   app.post('/api/projects', (req, res) => {
     try {
       const data = loadData();
+      debugLog('F', 'routes.js:projects_loadData', 'loadData result', { namespaces: data.namespaces.length, projects: data.projects.length });
       const { name, description, namespaceId } = req.body;
+      debugLog('F', 'routes.js:projects_entry', 'create project request', { name, description, namespaceId });
       if (!name?.trim()) {
         return res.status(400).json({ error: 'Project name is required' });
       }
       const nsId = namespaceId || 'default';
       if (!data.namespaces.find(n => n.id === nsId)) {
+        debugLog('F', 'routes.js:projects_badNs', 'namespace not found', { nsId, availableNs: data.namespaces.map(n => n.id) });
         return res.status(400).json({ error: 'Namespace not found' });
       }
       const project = {
@@ -144,8 +173,10 @@ export function applyRoutes(app) {
       };
       data.projects.push(project);
       saveData(data);
+      debugLog('F', 'routes.js:projects_success', 'project created', { projectId: project.id });
       res.status(201).json(project);
     } catch (e) {
+      debugLog('F', 'routes.js:projects_error', 'create project exception', { error: e.message, stack: e.stack });
       res.status(500).json({ error: 'Failed to create project' });
     }
   });
@@ -235,6 +266,30 @@ export function applyRoutes(app) {
       res.json(expense);
     } catch (e) {
       res.status(500).json({ error: 'Failed to toggle reimbursed' });
+    }
+  });
+
+  // PUT /api/projects/:id/expenses/:eid - Update an expense
+  app.put('/api/projects/:id/expenses/:eid', (req, res) => {
+    try {
+      const data = loadData();
+      const project = data.projects.find(p => p.id === req.params.id);
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+      if (project.submittedAt) return res.status(400).json({ error: 'Cannot update expense in submitted project' });
+      const expense = project.expenses.find(e => e.id === req.params.eid);
+      if (!expense) return res.status(404).json({ error: 'Expense not found' });
+
+      const { type, amount, date, description, reimbursed } = req.body;
+      if (type) expense.type = type;
+      if (amount != null) expense.amount = parseFloat(amount);
+      if (date) expense.date = date;
+      if (description !== undefined) expense.description = description;
+      if (reimbursed !== undefined) expense.reimbursed = reimbursed;
+
+      saveData(data);
+      res.json(expense);
+    } catch (e) {
+      res.status(500).json({ error: 'Failed to update expense' });
     }
   });
 
