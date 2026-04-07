@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createExpenseRequest } from './expenseApi.js';
 
 const ExpenseContext = createContext();
 
@@ -103,15 +104,14 @@ export function ExpenseProvider({ children }) {
 
   const addExpense = async (projectId, expense) => {
     try {
-      const headers = { 'Content-Type': 'application/json' };
+      const headers = {};
       if (user?.namespaceId) headers['x-user-namespace'] = user.namespaceId;
-      const res = await fetch(`${API_BASE}/projects/${projectId}/expenses`, {
-        method: 'POST',
+      const newExpense = await createExpenseRequest({
+        apiBase: API_BASE,
+        projectId,
+        expense,
         headers,
-        body: JSON.stringify(expense),
       });
-      if (!res.ok) throw new Error('Failed to add expense');
-      const newExpense = await res.json();
       setData(prev => ({
         ...prev,
         projects: prev.projects.map(p =>
@@ -123,6 +123,7 @@ export function ExpenseProvider({ children }) {
     } catch (e) {
       setError(e.message);
       console.error('Failed to add expense', e);
+      throw e;
     }
   };
 

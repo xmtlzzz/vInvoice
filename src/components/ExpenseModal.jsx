@@ -1,17 +1,31 @@
-import React, { useState } from 'react';
-import { useExpenses, EXPENSE_TYPES } from '../context/ExpenseContext';
-import clsx from 'clsx';
+import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import clsx from 'clsx';
+import { useExpenses, EXPENSE_TYPES } from '../context/ExpenseContext';
+import { getExpenseFormState } from '../context/expenseApi.js';
 
 export default function ExpenseModal({ isOpen, onClose, projectId, expense, onUpdate }) {
   const { addExpense } = useExpenses();
   const isEditMode = !!expense;
-  const [type, setType] = useState(expense?.type || 'SUBWAY');
-  const [amount, setAmount] = useState(expense?.amount?.toString() || '');
-  const [date, setDate] = useState(expense?.date || new Date().toISOString().split('T')[0]);
-  const [description, setDescription] = useState(expense?.description || '');
+  const [type, setType] = useState('SUBWAY');
+  const [amount, setAmount] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const nextState = getExpenseFormState(expense);
+    setType(nextState.type);
+    setAmount(nextState.amount);
+    setDate(nextState.date);
+    setDescription(nextState.description);
+    setError('');
+  }, [expense, isOpen]);
 
   if (!isOpen) return null;
 
@@ -114,6 +128,11 @@ export default function ExpenseModal({ isOpen, onClose, projectId, expense, onUp
               className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition-all bg-neutral-50 min-h-[80px] resize-none"
             />
           </div>
+          {error && (
+            <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl">
+              {error}
+            </div>
+          )}
           <div className="flex items-center gap-3 pt-2">
             <button
               type="button"
