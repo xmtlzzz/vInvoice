@@ -7,6 +7,7 @@ import {
   submitProject, revokeProject,
   addExpense, updateExpense, deleteExpense, toggleExpenseReimbursed, getExpense,
   findValidInviteCode, markInviteCodeUsed,
+  importProject, importExpense,
 } from './db.js';
 
 function isValidDate(str) {
@@ -410,6 +411,82 @@ export function applyRoutes(app) {
     } catch (e) {
       console.error('Delete expense error:', e);
       res.status(500).json({ error: 'Failed to delete expense' });
+    }
+  });
+
+  // GET /api/export — Export all data for current namespace
+  app.get('/api/export', async (req, res) => {
+    try {
+      const userNamespace = req.headers['x-user-namespace'] || req.query.ns;
+      const namespaceId = userNamespace || 'default';
+      const ns = await getNamespaceById(namespaceId);
+      if (!ns) return res.status(404).json({ error: 'Namespace not found' });
+      const projects = await getProjectsByNamespace(namespaceId);
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        namespace: ns,
+        projects,
+      };
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="vinvoice-export-${new Date().toISOString().split('T')[0]}.json"`);
+      res.json(exportData);
+    } catch (e) {
+      console.error('Export error:', e);
+      res.status(500).json({ error: '导出失败' });
+    }
+  });
+
+  // POST /api/import — Import data into current namespace
+  app.post('/api/import', async (req, res) => {
+    try {
+      const userNamespace = req.headers['x-user-namespace'];
+      const namespaceId = userNamespace || 'default';
+      const { projects: importProjects } = req.body;
+
+      if (!Array.isArray(importProjects)) {
+        return res.status(400).json({ error: '无效的导入数据格式，需要 projects 数组' });
+      }
+
+      let projectCount = 0;
+      let expenseCount = 0;
+
+      for (const p of importProjects) {
+        if (!p.id || !p.name) continue;
+        // Use existing project ID to avoid conflicts with ON CONFLICT
+        const project = {
+          id: p.id,
+          namespaceId,
+          name: p.name,
+          description: p.description || '',
+          createdAt: p.createdAt || new Date().toISOString().split('T')[0],
+        };
+        await importProject(project);
+
+        if (Array.isArray(p.expenses)) {
+          for (const e of p.expenses) {
+            if (!e.id || !e.type || e.amount == null) continue;
+            const expense = {
+              id: e.id,
+              type: e.type,
+              amount: typeof e.amount === 'string' ? parseFloat(e.amount) : e.amount,
+              date: e.date || new Date().toISOString().split('T')[0],
+              description: e.description || '',
+              reimbursed: !!e.reimbursed,
+            };
+            await importExpense(p.id, expense);
+            expenseCount++;
+          }
+        }
+        projectCount++;
+      }
+
+      res.json({
+        success: true,
+        imported: { projects: projectCount, expenses: expenseCount },
+      });
+    } catch (e) {
+      console.error('Import error:', e);
+      res.status(500).json({ error: '导入失败' });
     }
   });
 }

@@ -277,6 +277,21 @@ async function toggleExpenseReimbursed(expenseId) {
   return rows[0] ? formatExpense(rows[0]) : null;
 }
 
+// ─── Import helpers ─────────────────────────────────────
+async function importProject(project) {
+  await ensureSchema();
+  await sql()`INSERT INTO projects (id, namespace_id, name, description, created_at)
+    VALUES (${project.id}, ${project.namespaceId}, ${project.name}, ${project.description || ''}, ${project.createdAt})
+    ON CONFLICT (id) DO NOTHING`;
+}
+
+async function importExpense(projectId, expense) {
+  await ensureSchema();
+  await sql()`INSERT INTO expenses (id, project_id, type, amount, date, description, reimbursed)
+    VALUES (${expense.id}, ${projectId}, ${expense.type}, ${expense.amount}, ${expense.date}, ${expense.description || ''}, ${expense.reimbursed || false})
+    ON CONFLICT (id) DO NOTHING`;
+}
+
 async function getExpense(projectId, expenseId) {
   await ensureSchema();
   const rows = await sql()`SELECT * FROM expenses WHERE project_id = ${projectId} AND id = ${expenseId}`;
@@ -383,6 +398,8 @@ export {
   deleteExpense,
   toggleExpenseReimbursed,
   getExpense,
+  importProject,
+  importExpense,
   // Invite codes
   getInviteCodes,
   findValidInviteCode,

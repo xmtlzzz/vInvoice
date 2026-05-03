@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useExpenses, EXPENSE_TYPES } from '../context/ExpenseContext';
+import { useExpenses } from '../context/ExpenseContext';
 import { Loader2 } from 'lucide-react';
 
 export default function Statistics() {
-  const { data, loading } = useExpenses();
+  const { data, loading, mergedTypes } = useExpenses();
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
 
   if (loading) {
@@ -37,7 +37,7 @@ export default function Statistics() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-fade-in">
       <div>
         <h1 className="text-2xl font-bold text-neutral-900 mb-6">月度统计</h1>
         <div className="relative">
@@ -77,7 +77,7 @@ export default function Statistics() {
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-neutral-100">
         <h3 className="text-sm font-medium text-neutral-500 mb-4 uppercase tracking-wider">分类明细</h3>
         <div className="space-y-4">
-          {Object.entries(EXPENSE_TYPES).map(([key, label]) => {
+          {Object.entries(mergedTypes).map(([key, label]) => {
             const breakdown = typeBreakdown[key] || { count: 0, amount: 0 };
             const percentage = totalAmount > 0 ? (breakdown.amount / totalAmount) * 100 : 0;
             return (

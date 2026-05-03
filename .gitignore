@@ -2,7 +2,14 @@ node_modules
 dist
 server/node_modules
 server/data.json
+server/user.json
+server/invite_codes.json
 data/
 .env
 *.log
 .DS_Store
+
+.vercel
+.claude
+.idea
+.mcp.json

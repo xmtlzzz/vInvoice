@@ -14,20 +14,27 @@ export const EXPENSE_TYPES = {
 const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 const USER_KEY = 'vinvoice_user';
 
+function getInitialUser() {
+  const saved = localStorage.getItem(USER_KEY);
+  return saved ? JSON.parse(saved) : null;
+}
+
 export function ExpenseProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem(USER_KEY);
-    const savedUser = saved ? JSON.parse(saved) : null;
-    return savedUser;
-  });
+  const initialUser = getInitialUser();
+  const [user, setUser] = useState(initialUser);
   const [data, setData] = useState({ namespaces: [], projects: [] });
-  const [currentNamespace, setCurrentNamespace] = useState(() => {
-    const saved = localStorage.getItem(USER_KEY);
-    const savedUser = saved ? JSON.parse(saved) : null;
-    return savedUser?.namespaceId || 'default';
-  });
+  const [currentNamespace, setCurrentNamespace] = useState(initialUser?.namespaceId || 'default');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+
+  const customTypes = (() => {
+    const ns = data.namespaces.find(n => n.id === currentNamespace);
+    return ns?.customTypes || [];
+  })();
+
+  const mergedTypes = {
+    ...EXPENSE_TYPES,
+    ...Object.fromEntries(customTypes.map(t => [t.key, t.label])),
+  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -41,9 +48,7 @@ export function ExpenseProvider({ children }) {
       const json = await res.json();
       setData(json);
       setCurrentNamespace(ns);
-      setError(null);
     } catch (e) {
-      setError(e.message);
       console.error('Failed to load data', e);
     } finally {
       setLoading(false);
@@ -80,9 +85,8 @@ export function ExpenseProvider({ children }) {
       const newProject = await res.json();
       setData(prev => ({ ...prev, projects: [...prev.projects, newProject] }));
     } catch (e) {
-      setError(e.message);
       console.error('Failed to create project', e);
-      throw e;  // Re-throw so callers can catch it
+      throw e;
     }
   };
 
@@ -97,8 +101,8 @@ export function ExpenseProvider({ children }) {
         projects: prev.projects.filter(p => p.id !== projectId)
       }));
     } catch (e) {
-      setError(e.message);
       console.error('Failed to delete project', e);
+      throw e;
     }
   };
 
@@ -121,7 +125,6 @@ export function ExpenseProvider({ children }) {
         )
       }));
     } catch (e) {
-      setError(e.message);
       console.error('Failed to add expense', e);
       throw e;
     }
@@ -143,7 +146,6 @@ export function ExpenseProvider({ children }) {
         )
       }));
     } catch (e) {
-      setError(e.message);
       console.error('Failed to toggle reimbursed', e);
     }
   };
@@ -160,7 +162,6 @@ export function ExpenseProvider({ children }) {
         projects: prev.projects.map(p => p.id === projectId ? updated : p)
       }));
     } catch (e) {
-      setError(e.message);
       console.error('Failed to submit project', e);
     }
   };
@@ -185,7 +186,6 @@ export function ExpenseProvider({ children }) {
         )
       }));
     } catch (e) {
-      setError(e.message);
       console.error('Failed to update expense', e);
       throw e;
     }
@@ -206,7 +206,6 @@ export function ExpenseProvider({ children }) {
         )
       }));
     } catch (e) {
-      setError(e.message);
       console.error('Failed to delete expense', e);
     }
   };
@@ -223,13 +222,85 @@ export function ExpenseProvider({ children }) {
         projects: prev.projects.map(p => p.id === projectId ? updated : p)
       }));
     } catch (e) {
-      setError(e.message);
       console.error('Failed to revoke project', e);
     }
   };
 
+  const addCustomType = async (key, label, icon) => {
+    const headers = { 'Content-Type': 'application/json' };
+    if (user?.namespaceId) headers['x-user-namespace'] = user.namespaceId;
+    const res = await fetch(`${API_BASE}/custom-types`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ key, label, icon }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to add custom type');
+    }
+    const newType = await res.json();
+    setData(prev => ({
+      ...prev,
+      namespaces: prev.namespaces.map(n =>
+        n.id === currentNamespace
+          ? { ...n, customTypes: [...(n.customTypes || []), newType] }
+          : n
+      ),
+    }));
+    return newType;
+  };
+
+  const deleteCustomType = async (key) => {
+    const headers = {};
+    if (user?.namespaceId) headers['x-user-namespace'] = user.namespaceId;
+    const res = await fetch(`${API_BASE}/custom-types/${key}`, { method: 'DELETE', headers });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to delete custom type');
+    }
+    setData(prev => ({
+      ...prev,
+      namespaces: prev.namespaces.map(n =>
+        n.id === currentNamespace
+          ? { ...n, customTypes: (n.customTypes || []).filter(t => t.key !== key) }
+          : n
+      ),
+    }));
+  };
+
+  const exportData = () => {
+    const ns = user?.namespaceId ? `?ns=${encodeURIComponent(user.namespaceId)}` : '';
+    const a = document.createElement('a');
+    a.href = `${API_BASE}/export${ns}`;
+    a.download = `vinvoice-${new Date().toISOString().split('T')[0]}.json`;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const importData = async (file) => {
+    const text = await file.text();
+    const json = JSON.parse(text);
+    if (!json.projects) throw new Error('无效的备份文件格式');
+    const headers = { 'Content-Type': 'application/json' };
+    if (user?.namespaceId) headers['x-user-namespace'] = user.namespaceId;
+    const res = await fetch(`${API_BASE}/import`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(json),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || '导入失败');
+    }
+    const result = await res.json();
+    await fetchData(); // Refresh
+    return result;
+  };
+
   return (
-    <ExpenseContext.Provider value={{ user, login, logout, data, currentNamespace, loading, error, addProject, deleteProject, addExpense, updateExpense, toggleReimbursed, submitProject, revokeProject, deleteExpense, refetch: fetchData }}>
+    <ExpenseContext.Provider value={{ user, login, logout, data, currentNamespace, loading, customTypes, mergedTypes, addProject, deleteProject, addExpense, updateExpense, toggleReimbursed, submitProject, revokeProject, deleteExpense, addCustomType, deleteCustomType, exportData, importData, refetch: fetchData }}>
       {children}
     </ExpenseContext.Provider>
   );

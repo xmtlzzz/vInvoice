@@ -1,13 +1,35 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, ChevronRight, FolderOpen, CheckCircle2, Clock, FileText, Loader2, Trash2 } from 'lucide-react';
-import { useExpenses, EXPENSE_TYPES } from '../context/ExpenseContext';
+import { Plus, ChevronRight, FolderOpen, CheckCircle2, Clock, FileText, Loader2, Trash2, Download, Upload } from 'lucide-react';
+import { useExpenses } from '../context/ExpenseContext';
 import clsx from 'clsx';
 import ProjectModal from '../components/ProjectModal';
 
 export default function Home() {
-  const { data, loading, deleteProject } = useExpenses();
+  const { data, loading, mergedTypes, deleteProject, exportData, importData } = useExpenses();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [importing, setImporting] = useState(false);
+  const importRef = React.useRef(null);
+
+  const handleExport = async () => {
+    try { await exportData(); } catch (e) { alert('导出失败: ' + e.message); }
+  };
+
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const result = await importData(file);
+      alert(`导入成功！导入了 ${result.imported.projects} 个项目，${result.imported.expenses} 条费用记录。`);
+    } catch (err) {
+      alert('导入失败: ' + err.message);
+    } finally {
+      setImporting(false);
+      if (importRef.current) importRef.current.value = '';
+    }
+  };
 
   if (loading) {
     return (
@@ -26,7 +48,10 @@ export default function Home() {
   );
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-fade-in">
+      {deleteError && (
+        <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl">{deleteError}</div>
+      )}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-100">
           <p className="text-neutral-500 text-sm font-medium mb-1">总费用</p>
@@ -44,13 +69,37 @@ export default function Home() {
 
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-neutral-900">我的项目</h2>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors active:scale-95"
-        >
-          <Plus size={16} />
-          新建项目
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-neutral-600 text-sm font-medium rounded-lg hover:bg-neutral-100 transition-colors border border-neutral-200"
+            title="导出数据备份"
+          >
+            <Download size={16} />
+            导出
+          </button>
+          <label className={clsx(
+            'flex items-center gap-1.5 px-3 py-1.5 text-neutral-600 text-sm font-medium rounded-lg hover:bg-neutral-100 transition-colors border border-neutral-200 cursor-pointer',
+            importing && 'opacity-50 pointer-events-none'
+          )}>
+            {importing ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+            {importing ? '导入中...' : '导入'}
+            <input
+              ref={importRef}
+              type="file"
+              accept=".json"
+              onChange={handleImport}
+              className="hidden"
+            />
+          </label>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors active:scale-95"
+          >
+            <Plus size={16} />
+            新建项目
+          </button>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -94,9 +143,14 @@ export default function Home() {
                     </Link>
                     {!project.submittedAt && (
                       <button
-                        onClick={() => {
-                          if (confirm(`确定要删除项目 "${project.name}" 吗？`)) {
-                            deleteProject(project.id);
+                        onClick={async () => {
+                          if (confirm(`确定要删除项目 "${project.name}" 吗？此操作不可撤销。`)) {
+                            try {
+                              await deleteProject(project.id);
+                            } catch {
+                              setDeleteError(`删除项目 "${project.name}" 失败，请重试`);
+                              setTimeout(() => setDeleteError(''), 4000);
+                            }
                           }
                         }}
                         className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
@@ -111,7 +165,7 @@ export default function Home() {
                   <div className="flex items-center gap-2 flex-wrap">
                     {Object.entries(typeCount).map(([type, count]) => (
                       <span key={type} className="px-2 py-0.5 bg-neutral-100 text-neutral-600 text-xs font-medium rounded-md">
-                        {EXPENSE_TYPES[type]} x{count}
+                        {mergedTypes[type] || type} x{count}
                       </span>
                     ))}
                   </div>

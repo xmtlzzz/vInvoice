@@ -6,6 +6,12 @@
       "createdAt": "2026-03-29T14:43:45.099Z"
     },
     {
+      "id": "ns_admin",
+      "name": "admin 的空间",
+      "createdAt": "2026-03-29T14:43:45.099Z",
+      "customTypes": []
+    },
+    {
       "id": "1774795598992",
       "name": "cxy",
       "createdAt": "2026-03-29T14:46:38.992Z"
@@ -110,6 +116,15 @@
       "name": "123",
       "description": "",
       "createdAt": "2026-04-07",
+      "submittedAt": null,
+      "expenses": []
+    },
+    {
+      "id": "1777710366696",
+      "namespaceId": "ns_sz",
+      "name": "123",
+      "description": "",
+      "createdAt": "2026-05-02",
       "submittedAt": null,
       "expenses": []
     }

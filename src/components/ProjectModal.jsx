@@ -31,7 +31,7 @@ export default function ProjectModal({ isOpen, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div 
-        className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" 
+        className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-zoom-in-95"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6 border-b border-neutral-100">

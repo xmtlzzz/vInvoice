@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Check, X as XIcon, Train, Car, Building2, Footprints, Loader2, RotateCcw, Bus, Pencil } from 'lucide-react';
+import { ArrowLeft, Plus, Check, X as XIcon, Train, Car, Building2, Footprints, Loader2, RotateCcw, Bus, Pencil, Plane, Utensils, ShoppingBag, Ship, Bike, Fuel, Wrench, Phone, Gift, Coffee, Briefcase, GraduationCap, Stethoscope } from 'lucide-react';
 import { useExpenses, EXPENSE_TYPES } from '../context/ExpenseContext';
 import ExpenseModal from '../components/ExpenseModal';
 import clsx from 'clsx';
@@ -8,7 +8,7 @@ import clsx from 'clsx';
 export default function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data, loading, toggleReimbursed, submitProject, revokeProject, deleteExpense, updateExpense } = useExpenses();
+  const { data, loading, mergedTypes, customTypes, toggleReimbursed, submitProject, revokeProject, deleteExpense, updateExpense } = useExpenses();
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [filterType, setFilterType] = useState('ALL');
@@ -34,12 +34,18 @@ export default function ProjectDetail() {
     );
   }
 
+  const iconNameToComponent = {
+    Footprints, Car, Building2, Train, Bus,
+    Plane, Utensils, ShoppingBag, Ship, Bike, Fuel, Wrench, Phone, Gift, Coffee, Briefcase, GraduationCap, Stethoscope,
+  };
+
   const typeIcons = {
-    SUBWAY: Train,
+    SUBWAY: Footprints,
     TAXI: Car,
     HOTEL: Building2,
-    TRAIN: Footprints,
+    TRAIN: Train,
     BUS: Bus,
+    ...Object.fromEntries(customTypes.map(t => [t.key, iconNameToComponent[t.icon] || Train])),
   };
 
   const sortedExpenses = [...project.expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -56,7 +62,7 @@ export default function ProjectDetail() {
   const reimbursedAmount = filteredExpenses.filter(e => e.reimbursed).reduce((a, e) => a + e.amount, 0);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-fade-in">
       <button onClick={() => navigate('/')} className="flex items-center gap-1 text-neutral-500 hover:text-neutral-900 transition-colors group">
         <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
         <span className="text-sm font-medium">返回首页</span>
@@ -87,11 +93,10 @@ export default function ProjectDetail() {
             <button
               onClick={() => {
                 const unreimbursed = project.expenses.filter(e => !e.reimbursed);
-                if (unreimbursed.length > 0) {
-                  if (!confirm(`有 ${unreimbursed.length} 笔费用尚未标记为已报销，确定要提交吗？`)) {
-                    return;
-                  }
-                }
+                const msg = unreimbursed.length > 0
+                  ? `有 ${unreimbursed.length} 笔费用尚未标记为已报销，确定要提交吗？`
+                  : '确定要提交此报销单吗？提交后将无法添加或修改费用。';
+                if (!confirm(msg)) return;
                 submitProject(project.id);
               }}
               className="px-3 py-1 bg-neutral-100 text-neutral-600 text-xs font-semibold rounded-full hover:bg-primary-100 hover:text-primary-700 transition-colors"
@@ -139,7 +144,7 @@ export default function ProjectDetail() {
             className="px-3 py-2 rounded-lg border border-neutral-200 text-sm bg-white focus:border-primary-500 outline-none"
           >
             <option value="ALL">全部类型</option>
-            {Object.entries(EXPENSE_TYPES).map(([key, label]) => (
+            {Object.entries(mergedTypes).map(([key, label]) => (
               <option key={key} value={key}>{label}</option>
             ))}
           </select>
@@ -197,7 +202,7 @@ export default function ProjectDetail() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className="font-semibold text-neutral-900">
-                      {EXPENSE_TYPES[expense.type]}
+                      {mergedTypes[expense.type] || expense.type}
                     </span>
                     <span className="text-sm text-neutral-400">•</span>
                     <span className="text-sm text-neutral-500">{expense.date}</span>
