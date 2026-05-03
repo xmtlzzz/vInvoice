@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, ChevronRight, FolderOpen, CheckCircle2, Clock, FileText, Loader2, Trash2, Download, Upload } from 'lucide-react';
+import { Plus, ChevronRight, FolderOpen, CheckCircle2, Clock, FileText, Loader2, Trash2, Download, Upload, CheckCircle } from 'lucide-react';
 import { useExpenses } from '../context/ExpenseContext';
 import clsx from 'clsx';
 import ProjectModal from '../components/ProjectModal';
@@ -10,10 +10,21 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [importing, setImporting] = useState(false);
+  const [toast, setToast] = useState(null);
   const importRef = React.useRef(null);
 
-  const handleExport = async () => {
-    try { await exportData(); } catch (e) { alert('导出失败: ' + e.message); }
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 2500);
+  };
+
+  const handleExport = () => {
+    try {
+      exportData();
+      showToast('导出成功，文件已保存至浏览器默认下载目录');
+    } catch (e) {
+      showToast('导出失败: ' + e.message, 'error');
+    }
   };
 
   const handleImport = async (e) => {
@@ -22,9 +33,9 @@ export default function Home() {
     setImporting(true);
     try {
       const result = await importData(file);
-      alert(`导入成功！导入了 ${result.imported.projects} 个项目，${result.imported.expenses} 条费用记录。`);
+      showToast(`导入成功！${result.imported.projects} 个项目，${result.imported.expenses} 条费用`);
     } catch (err) {
-      alert('导入失败: ' + err.message);
+      showToast('导入失败: ' + err.message, 'error');
     } finally {
       setImporting(false);
       if (importRef.current) importRef.current.value = '';
@@ -51,6 +62,15 @@ export default function Home() {
     <div className="space-y-8 animate-fade-in">
       {deleteError && (
         <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl">{deleteError}</div>
+      )}
+      {toast && (
+        <div className={clsx(
+          'fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-sm font-medium animate-fade-in',
+          toast.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'
+        )}>
+          <CheckCircle size={16} />
+          {toast.message}
+        </div>
       )}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-100">
