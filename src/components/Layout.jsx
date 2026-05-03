@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutGrid, BarChart3, ChevronDown, Plus, Trash2, Layers, LogOut, User } from 'lucide-react';
+import { LayoutGrid, BarChart3, Settings, ChevronDown, Layers, LogOut, User } from 'lucide-react';
 import { useExpenses } from '../context/ExpenseContext';
 import clsx from 'clsx';
 
@@ -8,12 +8,12 @@ export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, data, currentNamespace, logout } = useExpenses();
-  const [isNsDropdownOpen, setIsNsDropdownOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 
   const navItems = [
     { path: '/', icon: LayoutGrid, label: '首页' },
     { path: '/statistics', icon: BarChart3, label: '统计' },
+    { path: '/types', icon: Settings, label: '设置' },
   ];
 
   const currentNs = data.namespaces.find(n => n.id === currentNamespace) || { name: '默认空间' };
@@ -36,36 +36,11 @@ export default function Layout({ children }) {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* User Namespace Switcher (Only if logged in) */}
+            {/* Namespace Label (Only if logged in) */}
             {isUserMode && (
-              <div className="relative">
-                <button
-                  onClick={() => setIsNsDropdownOpen(!isNsDropdownOpen)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 rounded-lg text-sm font-medium text-neutral-700 transition-colors"
-                >
-                  <Layers size={16} />
-                  <span className="max-w-[120px] truncate">{currentNs.name}</span>
-                  <ChevronDown size={14} className={clsx('transition-transform', isNsDropdownOpen && 'rotate-180')} />
-                </button>
-
-                {isNsDropdownOpen && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setIsNsDropdownOpen(false)} />
-                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-neutral-200 z-20 overflow-hidden">
-                      <div className="p-2 border-b border-neutral-100">
-                        <p className="text-xs font-semibold text-neutral-400 uppercase px-2 py-1">我的空间</p>
-                      </div>
-                      <div className="p-2">
-                        <p className="px-3 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg">
-                          {currentNs.name}
-                        </p>
-                        <p className="mt-2 px-3 text-xs text-neutral-400">
-                          登录用户空间，数据完全隔离
-                        </p>
-                      </div>
-                    </div>
-                  </>
-                )}
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 rounded-lg text-sm font-medium text-neutral-700" title="登录用户空间，数据完全隔离">
+                <Layers size={16} />
+                <span className="max-w-[120px] truncate">{currentNs.name}</span>
               </div>
             )}
 
