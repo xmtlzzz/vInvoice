@@ -13,3 +13,4 @@ data/
 .claude
 .idea
 .mcp.json
+.env.local
