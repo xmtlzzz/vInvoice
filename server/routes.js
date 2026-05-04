@@ -72,6 +72,8 @@ export function applyRoutes(app) {
         return res.status(400).json({ error: '用户名已存在' });
       }
       const nsId = `ns_${username}_${Date.now()}`;
+      // 必须先创建 namespace，因为 users 表有外键约束 REFERENCES namespaces(id)
+      await createNamespace({ id: nsId, name: `${username} 的空间` });
       const user = {
         id: Date.now().toString(),
         username,
@@ -80,7 +82,6 @@ export function applyRoutes(app) {
       };
       await createUser(user);
       await markInviteCodeUsed(inviteCode);
-      await createNamespace({ id: nsId, name: `${username} 的空间` });
       res.status(201).json({ id: user.id, username: user.username, namespaceId: user.namespaceId });
     } catch (e) {
       console.error('Register error:', e);
