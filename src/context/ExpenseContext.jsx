@@ -14,6 +14,26 @@ export const EXPENSE_TYPES = {
 const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 const USER_KEY = 'vinvoice_user';
 
+const PET_KEY = 'vinvoice_pet_style';
+
+const PET_STYLES = [
+  { id: 'cat', emoji: '🐱', name: '小猫咪' },
+  { id: 'dog', emoji: '🐶', name: '小狗狗' },
+  { id: 'nailong', image: '/pet-nailong.png', name: '奶龙' },
+  { id: 'fox', emoji: '🦊', name: '小狐狸' },
+  { id: 'penguin', emoji: '🐧', name: '企鹅酱' },
+];
+
+const PET_MESSAGES = {
+  project_created: '新项目创建成功，加油！📋',
+  expense_added: '记录了一笔新费用 💰',
+  expense_updated: '费用已更新 ✏️',
+  project_submitted: '报销单已提交，辛苦啦~ ✨',
+  expense_reimbursed: '又收回一笔！🎉',
+  data_imported: '数据导入完成 📥',
+  custom_type_added: '新的费用类型已添加 ✅',
+};
+
 function getInitialUser() {
   const saved = localStorage.getItem(USER_KEY);
   return saved ? JSON.parse(saved) : null;
@@ -25,6 +45,8 @@ export function ExpenseProvider({ children }) {
   const [data, setData] = useState({ namespaces: [], projects: [] });
   const [currentNamespace, setCurrentNamespace] = useState(initialUser?.namespaceId || 'default');
   const [loading, setLoading] = useState(true);
+  const [petStyle, setPetStyleState] = useState(() => localStorage.getItem(PET_KEY) || 'cat');
+  const [petMessage, setPetMessage] = useState(null);
 
   const customTypes = (() => {
     const ns = data.namespaces.find(n => n.id === currentNamespace);
@@ -60,6 +82,21 @@ export function ExpenseProvider({ children }) {
     fetchData();
   }, [fetchData]);
 
+  const showPetMessage = useCallback((actionType) => {
+    const text = PET_MESSAGES[actionType];
+    if (!text) return;
+    const id = Date.now().toString();
+    setPetMessage({ id, text });
+    setTimeout(() => {
+      setPetMessage(prev => prev?.id === id ? null : prev);
+    }, 3000);
+  }, []);
+
+  const setPetStyle = useCallback((id) => {
+    setPetStyleState(id);
+    localStorage.setItem(PET_KEY, id);
+  }, []);
+
   const login = (userData) => {
     setUser(userData);
     setCurrentNamespace(userData.namespaceId || 'default');
@@ -84,6 +121,7 @@ export function ExpenseProvider({ children }) {
       if (!res.ok) throw new Error('Failed to create project');
       const newProject = await res.json();
       setData(prev => ({ ...prev, projects: [...prev.projects, newProject] }));
+      showPetMessage('project_created');
     } catch (e) {
       console.error('Failed to create project', e);
       throw e;
@@ -124,6 +162,7 @@ export function ExpenseProvider({ children }) {
             : p
         )
       }));
+      showPetMessage('expense_added');
     } catch (e) {
       console.error('Failed to add expense', e);
       throw e;
@@ -145,6 +184,7 @@ export function ExpenseProvider({ children }) {
             : p
         )
       }));
+      if (updated.reimbursed) showPetMessage('expense_reimbursed');
     } catch (e) {
       console.error('Failed to toggle reimbursed', e);
     }
@@ -161,6 +201,7 @@ export function ExpenseProvider({ children }) {
         ...prev,
         projects: prev.projects.map(p => p.id === projectId ? updated : p)
       }));
+      showPetMessage('project_submitted');
     } catch (e) {
       console.error('Failed to submit project', e);
     }
@@ -185,6 +226,7 @@ export function ExpenseProvider({ children }) {
             : p
         )
       }));
+      showPetMessage('expense_updated');
     } catch (e) {
       console.error('Failed to update expense', e);
       throw e;
@@ -247,6 +289,7 @@ export function ExpenseProvider({ children }) {
           : n
       ),
     }));
+    showPetMessage('custom_type_added');
     return newType;
   };
 
@@ -296,11 +339,12 @@ export function ExpenseProvider({ children }) {
     }
     const result = await res.json();
     await fetchData(); // Refresh
+    showPetMessage('data_imported');
     return result;
   };
 
   return (
-    <ExpenseContext.Provider value={{ user, login, logout, data, currentNamespace, loading, customTypes, mergedTypes, addProject, deleteProject, addExpense, updateExpense, toggleReimbursed, submitProject, revokeProject, deleteExpense, addCustomType, deleteCustomType, exportData, importData, refetch: fetchData }}>
+    <ExpenseContext.Provider value={{ user, login, logout, data, currentNamespace, loading, customTypes, mergedTypes, addProject, deleteProject, addExpense, updateExpense, toggleReimbursed, submitProject, revokeProject, deleteExpense, addCustomType, deleteCustomType, exportData, importData, refetch: fetchData, petStyle, petMessage, showPetMessage, setPetStyle }}>
       {children}
     </ExpenseContext.Provider>
   );

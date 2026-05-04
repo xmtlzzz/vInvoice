@@ -24,8 +24,16 @@ const ICON_OPTIONS = [
   { name: 'Stethoscope', component: Stethoscope, label: '医疗' },
 ];
 
+const PET_STYLES = [
+  { id: 'cat', emoji: '🐱', name: '小猫咪' },
+  { id: 'dog', emoji: '🐶', name: '小狗狗' },
+  { id: 'nailong', image: '/pet-nailong.png', name: '奶龙' },
+  { id: 'fox', emoji: '🦊', name: '小狐狸' },
+  { id: 'penguin', emoji: '🐧', name: '企鹅酱' },
+];
+
 export default function Types() {
-  const { customTypes, addCustomType, deleteCustomType } = useExpenses();
+  const { customTypes, addCustomType, deleteCustomType, petStyle, setPetStyle } = useExpenses();
 
   const [showForm, setShowForm] = useState(false);
   const [icon, setIcon] = useState('Plane');
@@ -219,6 +227,42 @@ export default function Types() {
               ))}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Pet Settings */}
+      <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-neutral-100">
+          <h2 className="font-semibold text-neutral-800">桌面宠物</h2>
+          <p className="text-xs text-neutral-400 mt-0.5">选择一个陪伴你的小宠物</p>
+        </div>
+        <div className="p-4 grid grid-cols-5 gap-3">
+          {PET_STYLES.map((pet) => (
+            <button
+              key={pet.id}
+              onClick={() => setPetStyle(pet.id)}
+              className={clsx(
+                'flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all',
+                petStyle === pet.id
+                  ? 'bg-primary-50 border-2 border-primary-400 ring-2 ring-primary-200'
+                  : 'bg-neutral-50 border-2 border-transparent hover:bg-neutral-100 hover:border-neutral-300'
+              )}
+            >
+              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden">
+                {pet.image ? (
+                  <img src={pet.image} alt={pet.name} className="w-10 h-10 rounded-full object-cover" />
+                ) : (
+                  <span className="text-2xl">{pet.emoji}</span>
+                )}
+              </div>
+              <span className={clsx(
+                'text-xs font-medium',
+                petStyle === pet.id ? 'text-primary-700' : 'text-neutral-500'
+              )}>
+                {pet.name}
+              </span>
+            </button>
+          ))}
         </div>
       </div>
     </div>

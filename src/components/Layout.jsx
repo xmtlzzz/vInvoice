@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutGrid, BarChart3, Settings, ChevronDown, Layers, LogOut, User } from 'lucide-react';
 import { useExpenses } from '../context/ExpenseContext';
+import Pet from './Pet';
 import clsx from 'clsx';
 
 export default function Layout({ children }) {
@@ -84,6 +85,8 @@ export default function Layout({ children }) {
       <main className="max-w-5xl mx-auto px-4 py-8">
         {children}
       </main>
+
+      <Pet />
 
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 z-10">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-around">
