@@ -71,7 +71,7 @@ export function applyRoutes(app) {
       if (existing) {
         return res.status(400).json({ error: '用户名已存在' });
       }
-      const nsId = `ns_${username}_${Date.now()}`;
+      const nsId = `ns_${Date.now()}`;
       // 必须先创建 namespace，因为 users 表有外键约束 REFERENCES namespaces(id)
       await createNamespace({ id: nsId, name: `${username} 的空间` });
       const user = {
