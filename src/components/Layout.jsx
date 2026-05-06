@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutGrid, BarChart3, Settings, ChevronDown, Layers, LogOut, User } from 'lucide-react';
+import { LayoutGrid, BarChart3, Settings, ChevronDown, Layers, LogOut, User, Shield } from 'lucide-react';
 import { useExpenses } from '../context/ExpenseContext';
 import Pet from './Pet';
 import clsx from 'clsx';
@@ -15,6 +15,7 @@ export default function Layout({ children }) {
     { path: '/', icon: LayoutGrid, label: '首页' },
     { path: '/statistics', icon: BarChart3, label: '统计' },
     { path: '/types', icon: Settings, label: '设置' },
+    ...(user?.isAdmin ? [{ path: '/admin', icon: Shield, label: '管理' }] : []),
   ];
 
   const currentNs = data.namespaces.find(n => n.id === currentNamespace) || { name: '默认空间' };

@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import ProjectDetail from './pages/ProjectDetail';
 import Statistics from './pages/Statistics';
 import Types from './pages/Types';
+import Admin from './pages/Admin';
 import Login from './pages/Login';
 
 function AppRoutes() {
@@ -27,6 +28,7 @@ function AppRoutes() {
         <Route path="/project/:id" element={<ProjectDetail />} />
         <Route path="/statistics" element={<Statistics />} />
         <Route path="/types" element={<Types />} />
+        {user.isAdmin && <Route path="/admin" element={<Admin />} />}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

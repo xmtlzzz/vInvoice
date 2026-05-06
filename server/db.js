@@ -95,6 +95,23 @@ async function updateUserPassword(userId, hashedPassword) {
   await sql()`UPDATE users SET password = ${hashedPassword} WHERE id = ${userId}`;
 }
 
+async function getAllUsers() {
+  await ensureSchema();
+  const rows = await sql()`SELECT id, username, namespace_id FROM users ORDER BY username`;
+  return rows.map(u => ({ id: u.id, username: u.username, namespaceId: u.namespace_id }));
+}
+
+async function deleteUserById(id) {
+  await ensureSchema();
+  const user = await sql()`SELECT namespace_id FROM users WHERE id = ${id}`;
+  if (!user[0]) return false;
+  await sql()`DELETE FROM users WHERE id = ${id}`;
+  if (user[0].namespace_id) {
+    await sql()`DELETE FROM namespaces WHERE id = ${user[0].namespace_id}`;
+  }
+  return true;
+}
+
 // ─── Namespaces ──────────────────────────────────────────
 async function getNamespaces() {
   await ensureSchema();
@@ -371,6 +388,8 @@ export {
   findUserByUsername,
   createUser,
   updateUserPassword,
+  getAllUsers,
+  deleteUserById,
   // Auth helpers
   hashPassword,
   verifyPassword,

@@ -8,6 +8,7 @@ import {
   addExpense, updateExpense, deleteExpense, toggleExpenseReimbursed, getExpense,
   findValidInviteCode, markInviteCodeUsed,
   importProject, importExpense,
+  getAllUsers, deleteUserById,
 } from './db.js';
 
 function isValidDate(str) {
@@ -43,7 +44,7 @@ export function applyRoutes(app) {
       if (!valid) {
         return res.status(401).json({ error: '用户名或密码错误' });
       }
-      res.json({ id: user.id, username: user.username, namespaceId: user.namespace_id });
+      res.json({ id: user.id, username: user.username, namespaceId: user.namespace_id, isAdmin: user.username.toLowerCase() === 'sz' });
     } catch (e) {
       console.error('Login error:', e);
       res.status(500).json({ error: '登录失败' });
@@ -412,6 +413,46 @@ export function applyRoutes(app) {
     } catch (e) {
       console.error('Delete expense error:', e);
       res.status(500).json({ error: 'Failed to delete expense' });
+    }
+  });
+
+  // ─── Admin endpoints ──────────────────────────────────────
+  function requireAdmin(req, res) {
+    const username = req.headers['x-user-username'];
+    if (!username || username.toLowerCase() !== 'sz') {
+      res.status(403).json({ error: '无管理员权限' });
+      return false;
+    }
+    return true;
+  }
+
+  // GET /api/admin/users
+  app.get('/api/admin/users', async (req, res) => {
+    try {
+      if (!requireAdmin(req, res)) return;
+      const users = await getAllUsers();
+      res.json(users);
+    } catch (e) {
+      console.error('Admin list users error:', e);
+      res.status(500).json({ error: '获取用户列表失败' });
+    }
+  });
+
+  // DELETE /api/admin/users/:id
+  app.delete('/api/admin/users/:id', async (req, res) => {
+    try {
+      if (!requireAdmin(req, res)) return;
+      const adminUsername = req.headers['x-user-username']?.toLowerCase();
+      const targetUser = (await getAllUsers()).find(u => u.id === req.params.id);
+      if (!targetUser) return res.status(404).json({ error: '用户不存在' });
+      if (targetUser.username.toLowerCase() === adminUsername) {
+        return res.status(400).json({ error: '不能删除自己' });
+      }
+      await deleteUserById(req.params.id);
+      res.json({ success: true });
+    } catch (e) {
+      console.error('Admin delete user error:', e);
+      res.status(500).json({ error: '删除用户失败' });
     }
   });
 
